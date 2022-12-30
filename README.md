@@ -1,4 +1,4 @@
-<h1 align="center">Avaliação de Algoritmos para Correspondência de Imagens Área de Áreas Urbanas 
+<h1 align="center">Avaliação de Algoritmos para Correspondência de Imagens de Áreas Urbanas 
  </h1>
 <p align="justify">Projeto realizado em Python utilizando a biblioteca OpenCV,  visando analisar quais algoritmos de correspondências de imagem (template matching) apresentam melhor resultados ao ser aplicado em imagens aéreas de áreas urbanas. 
 </p>
