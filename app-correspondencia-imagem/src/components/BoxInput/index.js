@@ -1,13 +1,13 @@
 import { useGlobalContext } from "@/context/Global"
+import { useRef } from "react";
 
 
-export default function BoxInput() {
+export default function BoxInput() {    
     const  globalContext = useGlobalContext();
+    const buttonRef = useRef(null)
 
     function handleSubmit(event) {
         event.preventDefault(); 
-        console.log(`Ponto-Chave - ${globalContext.detector}\nDescritor - ${globalContext.descriptor}`)
-
 
         
         try {
@@ -22,52 +22,26 @@ export default function BoxInput() {
                 }),
                 headers: {"Content-type": "application/json; charset=UTF-8"}
             })
-            // .then(response => response.json())
-            // .then(data => {
-            //     console.log(data)
-            //     // setCurrenTraining(data.treinoAtual);
-            //     // setTrainingList(data.listaTreino);
-            // })
+            .then(response => response.json())
+            .then(data => {
+                console.log(data)
+                globalContext.setReport(data)
+            })
             .catch(err => {
                 console.log('ERRO NO FETCH -> ' + err)
             });
         } catch (err) {
             console.log(`Erro: ${err}`)
             // Alert.alert('Ops', 'Erro tente novamente');      
-        }    
+        }   
+    }
 
-
-        // try {
-        //     setIsAuthenticating(true);   
-        //     fetch(URL, {
-        //     method: 'POST',
-        //     body: JSON.stringify({
-        //         Nome: userName,
-        //         Senha: password
-        //     }),
-        //     headers: {"Content-type": "application/json; charset=UTF-8"}
-        //     })
-        //     .then(response => response.json())
-        //     .then(login => {
-        //     if (login.sucesso) {
-        //         console.log(login.usuario)
-        //         localStorage.setItem('user', JSON.stringify(login.usuario))
-        //         router.push('/home');
-        //         // Replace 
-        //         //  --> Context API 
-        //     } else {
-        //         console.log("ERRO LOGIN")
-        //         setIsAuthenticating(false);
-        //     }
-        //     })
-        //     .catch(err => {
-        //         console.log('ERRO NO FETCH -> ' + err)
-        //         setIsAuthenticating(false);
-        //     });
-        // } catch (err) {
-        //     console.log(`Erro: ${err}`)
-        //     // Alert.alert('Ops', 'Erro tente novamente');      
-        // }        
+    function handdleShowReport() {
+        buttonRef.current.blur(); 
+        if (globalContext.report != null) {
+            globalContext.setShowReport(!globalContext.showReport)
+        }
+        
     }
 
     return (
@@ -114,7 +88,7 @@ export default function BoxInput() {
                 id="multiple_files" 
                 type="file" 
                 accept="image/png, image/jpeg"
-                // required
+                required
                 onChange={(e) => globalContext.setUrlImg1(e.target.files[0])}/>
                 
                 <label 
@@ -150,7 +124,7 @@ export default function BoxInput() {
                 id="multiple_files" 
                 type="file" 
                 accept="image/png, image/jpeg"
-                // required
+                required
                 onChange={(e) => globalContext.setUrlImg2(e.target.files[0])}/>
             </div>   
         
@@ -186,10 +160,10 @@ export default function BoxInput() {
                 dark:text-white 
                 dark:focus:ring-blue-500 
                 dark:focus:border-blue-500"
-                // required
+                required
                 onChange={(e) => globalContext.setDetector(e.target.value)}
                 >
-                    <option defaultValue={'SIFT'}>Escolha o detector</option>
+                    <option>Escolha o detector</option>
                     <option value="SIFT">SIFT</option>
                     <option value="SURF">SURF</option>
                     <option value="FAST">FAST</option>
@@ -228,10 +202,10 @@ export default function BoxInput() {
                 dark:text-white 
                 dark:focus:ring-blue-500 
                 dark:focus:border-blue-500"
-                // required
+                required
                 onChange={(e) => globalContext.setDescriptor(e.target.value)}
                 >
-                    <option defaultValue={'SIFT'}>Escolha o descritor</option>
+                    <option>Escolha o descritor</option>
                     <option value="SIFT">SIFT</option>
                     <option value="SURF">SURF</option>
                     <option value="BRIEF">BRIEF</option>
@@ -240,32 +214,74 @@ export default function BoxInput() {
                 </select>
             </div>
             
-            <div className="flex justify-center items-center">
+            <div className="mt-4 flex justify-between items-center">
                 <button 
                 type="submit"
                 className   ="
                 w-48
-                mt-4
                 text-white 
                 bg-gray-800 
                 hover:bg-gray-700 
+                focus:text-gray-800
+                focus:bg-gray-50
                 focus:outline-none 
                 focus:ring-4 
-                focus:ring-gray-300 
+                focus:ring-gray-200 
                 font-medium 
                 rounded-lg 
                 text-sm 
                 px-5 
                 py-2.5 
                 mr-2 
-                mb-2 
-                dark:bg-gray-800 
-                dark:hover:bg-gray-700
-                dark:focus:ring-gray-700 
-                dark:border-gray-700
                 uppercase">
                     enviar
                 </button>
+
+                <button 
+                type="submit"
+                className   ="
+                w-48
+                text-zinc-800
+                bg-gray-50 
+                hover:bg-gray-100 
+                focus:text-white
+                focus:bg-gray-800
+                focus:outline-none 
+                focus:ring-4 
+                focus:ring-gray-200 
+                font-medium 
+                rounded-lg 
+                text-sm 
+                px-5 
+                py-2.5 
+                uppercase">
+                    Gerar Relatório
+                </button>
+
+                <button 
+                type="button" 
+                className="
+                text-white 
+                bg-gray-800 
+                hover:bg-gray-700 
+                focus:ring-4 
+                focus:outline-none 
+                focus:text-gray-800
+                focus:bg-gray-50
+                focus:ring-gray-200 
+                font-medium 
+                rounded-full 
+                text-sm 
+                p-2.5 
+                text-center 
+                inline-flex 
+                items-center"
+                onClick={handdleShowReport}
+                ref={buttonRef}>
+                    <svg aria-hidden="true" className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fillRule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clipRule="evenodd"></path></svg>
+                    <span className="sr-only">Icon to Show</span>
+                </button>
+
             </div>
         </form>
     )

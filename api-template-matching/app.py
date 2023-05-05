@@ -18,9 +18,9 @@ def make_image_match():
 
     print(match.__repr__())
 
-    match.training()
+    result = match.training()
 
-    return 'API request recebido com sucesso!'
+    return result
 
 
 if __name__ == "__main__":

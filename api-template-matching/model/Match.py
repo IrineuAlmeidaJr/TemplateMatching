@@ -67,25 +67,40 @@ class Match:
         train_image = cv2.imread(f'./image/{self.train_image}')
 
         train_image = self.equalize_color(query_image, train_image)
-
+        inliers = 0
+        outliers = 0
+        subtraction = 0
         if self.detector == "SIFT":
             if self.descriptor == "SIFT":
-                inliers, outliers, img_difference, img_show = self.sift_sift(query_image, train_image)
-                cv2.imwrite('./output/image_match.jpg', img_show)
-
-                if inliers > 5 and img_difference < 80:
+                inliers, outliers, subtraction, img_show = self.sift_sift(query_image, train_image)
+                cv2.imwrite('../../template-matching/app-correspondencia-imagem/public/images/image_match.jpg', img_show)
+                if inliers > 5 and subtraction < 80:
                     print("Número de inliers: ", inliers)
                     print("Número de outliers: ", outliers)
-                    print("Subtração (img2-img1): ", img_difference)
+                    print("Subtração (img2-img1): ", subtraction)
                 else:
                     print("Imagens diferentes")
 
-        elif self.detector == "FAST":
-            print("Implementar...")
-        elif self.detector == "AKAZE":
-            print("Implementar...")
+            elif self.detector == "FAST":
+                print("Implementar...")
+            elif self.detector == "AKAZE":
+                print("Implementar...")
 
-        print("FIM")
+        if (inliers > 5 and subtraction < 80):
+            return {
+                "sucess": True,
+                "inliers": inliers,
+                "outliers": outliers,
+                "subtraction": subtraction
+            }
+        else:
+            return {
+                "sucess": False,
+                "inliers": inliers,
+                "outliers": outliers,
+                "subtraction": subtraction
+            }
+
 
     @staticmethod
     def equalize_color(img1, img2):
@@ -108,7 +123,7 @@ class Match:
         # Converter de volta para o espaço de cor BGR
         result = cv2.cvtColor(lab2, cv2.COLOR_LAB2BGR)
 
-        cv2.imwrite('./output/equalize_color_img1.jpg', result)
+        cv2.imwrite('../../template-matching/app-correspondencia-imagem/public/images/equalize_color_img1.jpg', result)
 
         return result
 
@@ -210,7 +225,7 @@ class Match:
             # Subtraindo a imagem transformada da imagem original
             img_diff = cv2.absdiff(img1, img2_transformed)
             # Exibi a imagem obtida por meio da subtração
-            cv2.imwrite('./output/image_subtraction.jpg', img_diff)
+            cv2.imwrite('../../template-matching/app-correspondencia-imagem/public/images/image_subtraction.jpg', img_diff)
 
             img_difference = np.mean(img_diff)
         else:

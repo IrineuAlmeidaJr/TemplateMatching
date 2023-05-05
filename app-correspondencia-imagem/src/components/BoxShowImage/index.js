@@ -42,7 +42,7 @@ export default function BoxShowImage() {
     return (
         <div 
         className="
-        ml-4 
+        mr-4 
         mx-2 
         p-4 
         w-full 
@@ -97,11 +97,14 @@ export default function BoxShowImage() {
                     <div />
                     
                 }   
-            </div>
+                </div>
             </div>
                 
-                    
-            <ModalImage image={localImg} />                 
+            <ModalImage image={localImg} />         
+
+              
+
+
             
         </div>
     )
