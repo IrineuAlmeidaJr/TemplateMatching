@@ -205,7 +205,7 @@ export default function ShowReport() {
                         uppercase"
                         onClick={() => setActive(true)}
                         >
-                            Aplicar Imagem
+                            Ampliar Imagem
                         </button>
                     </div>
 

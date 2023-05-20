@@ -54,7 +54,7 @@ export default function ModalImage({ image }) {
                 dark:border-gray-700
                 uppercase"
                 disabled>
-                    Aplicar Imagem
+                    Ampliar Imagem
                 </button>
             } 
             </div>      

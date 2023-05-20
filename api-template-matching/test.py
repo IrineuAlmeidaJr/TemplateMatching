@@ -117,7 +117,7 @@ def orb_orb(query_img, train_img):
 
     tempo_gasto = fim - inicio
 
-    inliers, outliers, img_difference, img_show = ransac(img1, img2, kp1, kp2, good_matches)
+    inliers, outliers, img_difference, img_show = ransac(img1, img2, kp1, kp2, matches)
 
     return inliers, outliers, img_difference, img_show, tempo_gasto
 
@@ -316,10 +316,13 @@ def equaliza_cor(sat, uav):
 def main():
     # query_img = cv2.imread('./data/outros/lena.png')
     # train_img = cv2.imread('./data/outros/lena1.jpg')
-    query_img = cv2.imread('./data/curitiba_1/curitiba_1_04-20.png')
-    train_img = cv2.imread('./data/curitiba_1/curitiba_1_05-21_angulo.png')
+    # query_img = cv2.imread('./data/curitiba_1/curitiba_1_04-20.png')
+    # train_img = cv2.imread('./data/curitiba_1/curitiba_1_05-21_angulo.png')
     # query_img = cv2.imread('./data/machado_1/machado_1_3-20.jpg')
     # train_img = cv2.imread('./data/machado_1/machado_1_8-22.png')
+
+    query_img = cv2.imread('./data/curitiba_2/curitiba_2_04-20.jpg')
+    train_img = cv2.imread('./data/curitiba_2/curitiba_2_05-21.jpg')
 
     cv2.imshow("img1", query_img)
 
@@ -332,9 +335,9 @@ def main():
     # sift(query_img, train_img)
     # sif_match_ransac(query_img, train_img)
 
-    inliers, outliers, img_difference, img_show, tempo = sift_sift(query_img, train_img)
+    # inliers, outliers, img_difference, img_show, tempo = sift_sift(query_img, train_img)
     # inliers, outliers, img_difference, img_show, tempo = orb_orb(query_img, train_img)
-    # inliers, outliers, img_difference, img_show, tempo = surf_surf(query_img, train_img)
+    inliers, outliers, img_difference, img_show, tempo = surf_surf(query_img, train_img)
     if inliers > 5 and img_difference < 80:
         print("Número de inliers: ", inliers)
         print("Número de outliers: ", outliers)
