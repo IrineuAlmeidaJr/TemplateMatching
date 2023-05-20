@@ -21,8 +21,40 @@ def rotacionar_imagem(img, angulo):
 
     return img_rot
 
-def orb(query_img, train_img):
-    MIN_MATCH_COUNT = 125
+
+def surf_surf(query_img, train_img):
+    img1 = cv2.cvtColor(query_img, cv2.COLOR_BGR2GRAY)
+    img2 = cv2.cvtColor(train_img, cv2.COLOR_BGR2GRAY)
+
+    # minHessian = 8000
+    # surf = cv2.SIFT_create(minHessian)
+    surf = cv2.SIFT_create()
+
+    kp1, des1 = surf.detectAndCompute(img1, None)
+    kp2, des2 = surf.detectAndCompute(img2, None)
+
+    # --> Faz Correspondência
+    # Correspondência
+    FLANN_INDEX_KDTREE = 0
+    index_params = dict(algorithm=FLANN_INDEX_KDTREE, trees=5)
+    search_params = dict(checks=50)
+
+    flann = cv2.FlannBasedMatcher(index_params, search_params)
+
+    matches = flann.knnMatch(des1, des2, k=2)
+
+    img_matches = cv2.drawMatchesKnn(img1, kp1, img2, kp2, matches, None, flags=2)
+
+    # Armazena todas as boas correspondências de acordo com o teste de proporção de Lowe's
+    good_matches = []
+    for m, n in matches:
+        if m.distance < 0.7 * n.distance:
+            good_matches.append(m)
+
+    return ransac(img1, img2, kp1, kp2, good_matches)
+
+def orb_orb(query_img, train_img):
+    # MIN_MATCH_COUNT = 125
 
     # train_img = rotacionar_imagem(train_img, 95)
 
@@ -39,38 +71,42 @@ def orb(query_img, train_img):
     matches = sorted(matches, key=lambda x: x.distance)
     print("Rawmatches (correspodência): ", len(matches))
 
-    if len(matches) > MIN_MATCH_COUNT:
-        # Se verdade, desenhar os inliers
-        src_pts = np.float32([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
-        dst_pts = np.float32([kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
-        M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
-        matchesMask = mask.ravel().tolist()
-        h, w = img1.shape
-        pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
-        dst = cv2.perspectiveTransform(pts, M)
-        img2 = cv2.polylines(img2, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
-    else:
-        print(f'Não foram encontradas correspondências suficientes')
-        matchesMask = None
 
 
+    # if len(matches) > MIN_MATCH_COUNT:
+    #     # Se verdade, desenhar os inliers
+    #     src_pts = np.float32([kp1[m.queryIdx].pt for m in matches]).reshape(-1, 1, 2)
+    #     dst_pts = np.float32([kp2[m.trainIdx].pt for m in matches]).reshape(-1, 1, 2)
+    #     M, mask = cv2.findHomography(src_pts, dst_pts, cv2.RANSAC, 5.0)
+    #     matchesMask = mask.ravel().tolist()
+    #     h, w = img1.shape
+    #     pts = np.float32([[0, 0], [0, h - 1], [w - 1, h - 1], [w - 1, 0]]).reshape(-1, 1, 2)
+    #     dst = cv2.perspectiveTransform(pts, M)
+    #     img2 = cv2.polylines(img2, [np.int32(dst)], True, 255, 3, cv2.LINE_AA)
+    # else:
+    #     print(f'Não foram encontradas correspondências suficientes')
+    #     matchesMask = None
+    #
+    #
+    #
+    # draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
+    #                    singlePointColor=None,
+    #                    matchesMask=None,  # draw only inliers
+    #                    flags=2)
+    #
+    #
+    #
+    # final_img = cv2.drawMatches(img1, kp1,
+    #                             img2, kp2, matches, None, **draw_params)
+    #
+    # cv2.imshow("Matches in ORB", final_img)
+    # cv2.waitKey(0)
 
-    draw_params = dict(matchColor=(0, 255, 0),  # draw matches in green color
-                       singlePointColor=None,
-                       matchesMask=None,  # draw only inliers
-                       flags=2)
-
-
-
-    final_img = cv2.drawMatches(img1, kp1,
-                                img2, kp2, matches, None, **draw_params)
-
-    cv2.imshow("Matches", final_img)
-    cv2.waitKey(0)
+    return ransac(img1, img2, kp1, kp2, matches)
 
     # https://medium.com/image-stitching-com-opencv-e-python/fazendo-uma-image-stitching-da-paisagem-da-janela-do-seu-quarto-fcf09df55c51
 
-def sift(query_img, train_img):
+def sift_sift(query_img, train_img):
     # train_img = rotacionar_imagem(train_img,15)
 
     # Converte para Cinza para trabalhar com um canal apenas
@@ -108,6 +144,32 @@ def sift(query_img, train_img):
         if m.distance < 0.7 * n.distance:
             good_matches.append(m)
 
+    return ransac(img1, img2, kp1, kp2, good_matches)
+
+    # https://docs.opencv.org/3.4/d1/de0/tutorial_py_feature_homography.html
+
+# def remove_areas_verdes(img):
+#     # Converte a imagem para o espaço de cor HSV
+#     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
+#
+#     # Define o intervalo de cores da área verde
+#     lower_green = np.array([36, 25, 25])
+#     upper_green = np.array([70, 255, 255])
+#
+#     mask = cv2.inRange(hsv, lower_green, upper_green)
+#
+#     kernel = np.ones((5, 5), np.uint8)
+#     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
+#     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
+#
+#     mask = cv2.bitwise_not(mask)
+#
+#     img_sem_verde = cv2.bitwise_and(img, img, mask=mask)
+#
+#     # Exibe o resultado
+#     cv2.imshow('img_sem_verde', img_sem_verde)
+
+def ransac(img1, img2, kp1, kp2, good_matches):
     # Deve conter no caso MIN_MATCH_COUNT para considerar que encontrou a imagem
     inliers = 0
     outliers = 0
@@ -161,7 +223,7 @@ def sift(query_img, train_img):
 
         # --- TRANSFORMAÇÃO: visando encaixar a imagem 2 na imagem 1
         # Invertendo a transformação para subtrair da imagem original
-        M_inv = np.linalg.inv(M) # calcula matriz inversa
+        M_inv = np.linalg.inv(M)  # calcula matriz inversa
         img2_transformed = cv2.warpPerspective(img2, M_inv, (img1.shape[1], img1.shape[0]))
         # Subtraindo a imagem transformada da imagem original
         img_diff = cv2.absdiff(img1, img2_transformed)
@@ -170,7 +232,7 @@ def sift(query_img, train_img):
         img_difference = np.mean(img_diff)
     else:
         print(f'Não foram encontradas correspondências suficientes - '
-                  f'{len(good_matches)}/{MIN_MATCH_COUNT}')
+              f'{len(good_matches)}/{MIN_MATCH_COUNT}')
         matchesMask = None
 
     # desenha os inliers
@@ -182,31 +244,7 @@ def sift(query_img, train_img):
     img3 = cv2.drawMatches(img1, kp1,
                            img2, kp2, good_matches, None, **draw_params)
 
-
     return inliers, outliers, img_difference, img3
-
-    # https://docs.opencv.org/3.4/d1/de0/tutorial_py_feature_homography.html
-
-# def remove_areas_verdes(img):
-#     # Converte a imagem para o espaço de cor HSV
-#     hsv = cv2.cvtColor(img, cv2.COLOR_BGR2HSV)
-#
-#     # Define o intervalo de cores da área verde
-#     lower_green = np.array([36, 25, 25])
-#     upper_green = np.array([70, 255, 255])
-#
-#     mask = cv2.inRange(hsv, lower_green, upper_green)
-#
-#     kernel = np.ones((5, 5), np.uint8)
-#     mask = cv2.morphologyEx(mask, cv2.MORPH_OPEN, kernel)
-#     mask = cv2.morphologyEx(mask, cv2.MORPH_CLOSE, kernel)
-#
-#     mask = cv2.bitwise_not(mask)
-#
-#     img_sem_verde = cv2.bitwise_and(img, img, mask=mask)
-#
-#     # Exibe o resultado
-#     cv2.imshow('img_sem_verde', img_sem_verde)
 
 def histograma(img1, img2):
     # Converte para Cinza para trabalhar com um canal apenas
@@ -219,38 +257,49 @@ def histograma(img1, img2):
     cv2.imshow("Histograma_1", img1)
     cv2.imshow("Histograma_2", img2)
 
-def equaliza_cor(img1, img2):
+
+def equaliza_cor(sat, uav):
     # Converter ambas as imagens para o espaço de cor Lab
-    lab1 = cv2.cvtColor(img1, cv2.COLOR_BGR2LAB)
-    lab2 = cv2.cvtColor(img2, cv2.COLOR_BGR2LAB)
+    sat = cv2.cvtColor(sat, cv2.COLOR_BGR2LAB)
+    uav = cv2.cvtColor(uav, cv2.COLOR_BGR2LAB)
 
     # Calcular a média e o desvio padrão dos canais L, a e b da imagem img1
-    mean1, std1 = cv2.meanStdDev(lab1)
-    mean1 = mean1.ravel() # achatada em um array 1D, que pode ser mais facilmente manipulado ou processado
-    std1 = std1.ravel() # achatada em um array 1D, que pode ser mais facilmente manipulado ou processado
+    media_pixels_sat, desvio_padrao_sat = cv2.meanStdDev(sat)
+    media_pixels_sat = media_pixels_sat.ravel()  # achatada em um array 1D, que pode ser mais facilmente manipulado ou processado
+    desvio_padrao_sat = desvio_padrao_sat.ravel()  # achatada em um array 1D, que pode ser mais facilmente manipulado ou processado
 
     # Normalizar os canais da imagem img2 pela média e desvio padrão da imagem img1
-    lab2[:, :, 0] = np.clip((((lab2[:, :, 0] - np.mean(lab2[:, :, 0])) * (std1[0] / np.std(lab2[:, :, 0]))) + mean1[0]), 0, 255).astype(np.uint8)
-    lab2[:, :, 1] = ((lab2[:, :, 1] - np.mean(lab2[:, :, 1])) * (std1[1] / np.std(lab2[:, :, 1]))) + mean1[1]
-    lab2[:, :, 2] = ((lab2[:, :, 2] - np.mean(lab2[:, :, 2])) * (std1[2] / np.std(lab2[:, :, 2]))) + mean1[2]
+    uav[:, :, 0] = np.clip(((uav[:, :, 0] - np.mean(uav[:, :, 0])) * (desvio_padrao_sat[0] / np.std(uav[:, :, 0]))) \
+                           + media_pixels_sat[0], 0, 255)
+    # esta tendo que normalizar, não entendi muito o porque seguindo o artigo eu não conseguir, perguntar
+    # Teve que normalizar
+    # img2[:, :, 0] = ((img2[:, :, 0] - np.mean(img2[:, :, 0])) * (desvio_padrao_img1[0] / np.std(img2[:, :, 0]))) \
+    #                 + media_pixels_img1[0]
+    uav[:, :, 1] = ((uav[:, :, 1] - np.mean(uav[:, :, 1])) * (desvio_padrao_sat[1] / np.std(uav[:, :, 1]))) \
+                   + media_pixels_sat[1]
+    uav[:, :, 2] = ((uav[:, :, 2] - np.mean(uav[:, :, 2])) * (desvio_padrao_sat[2] / np.std(uav[:, :, 2]))) \
+                   + media_pixels_sat[2]
 
     # Converter de volta para o espaço de cor BGR
-    resultado = cv2.cvtColor(lab2, cv2.COLOR_LAB2BGR)
-    # cv2.imshow("Equalização Cor", resultado)
-    return resultado
+    result = cv2.cvtColor(uav, cv2.COLOR_LAB2BGR)
+
+    cv2.imwrite('../../template-matching/app-correspondencia-imagem/public/images/equalize_color_img1.jpg', result)
+
+    return result
 
 
 def main():
-    # query_img = cv2.imread('lena.png')
-    # train_img = cv2.imread('lena1-i.jpg')
-    # query_img = cv2.imread('./data/curitiba_1/curitiba_1_04-20.png')
-    # train_img = cv2.imread('./data/curitiba_1/curitiba_1_05-21_angulo.png')
-    query_img = cv2.imread('./data/machado_1/machado_1_3-20.jpg')
-    train_img = cv2.imread('./data/machado_1/machado_1_8-22.png')
+    # query_img = cv2.imread('./data/outros/lena.png')
+    # train_img = cv2.imread('./data/outros/lena1.jpg')
+    query_img = cv2.imread('./data/curitiba_1/curitiba_1_04-20.png')
+    train_img = cv2.imread('./data/curitiba_1/curitiba_1_05-21_angulo.png')
+    # query_img = cv2.imread('./data/machado_1/machado_1_3-20.jpg')
+    # train_img = cv2.imread('./data/machado_1/machado_1_8-22.png')
 
     cv2.imshow("img1", query_img)
 
     train_img = equaliza_cor(query_img, train_img)
+    cv2.imshow("train_img equalizada", train_img)
 
     # histograma(query_img, train_img)
 
@@ -258,7 +307,9 @@ def main():
     # sift(query_img, train_img)
     # sif_match_ransac(query_img, train_img)
 
-    inliers, outliers, img_difference, img_show = sift(query_img, train_img)
+    # inliers, outliers, img_difference, img_show = sift_sift(query_img, train_img)
+    # inliers, outliers, img_difference, img_show = orb_orb(query_img, train_img)
+    inliers, outliers, img_difference, img_show = surf_surf(query_img, train_img)
     if inliers > 5 and img_difference < 80:
         print("Número de inliers: ", inliers)
         print("Número de outliers: ", outliers)
@@ -266,7 +317,7 @@ def main():
     else:
         print("Imagens diferentes")
 
-    cv2.imshow("Matche", img_show)
+    cv2.imshow("Matches-img", img_show)
 
     # remove_areas_verdes(train_img)
 

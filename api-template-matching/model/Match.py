@@ -105,23 +105,23 @@ class Match:
     @staticmethod
     def equalize_color(img1, img2):
         # Converter ambas as imagens para o espaço de cor Lab
-        lab1 = cv2.cvtColor(img1, cv2.COLOR_BGR2LAB)
-        lab2 = cv2.cvtColor(img2, cv2.COLOR_BGR2LAB)
+        img1 = cv2.cvtColor(img1, cv2.COLOR_BGR2LAB)
+        img2 = cv2.cvtColor(img2, cv2.COLOR_BGR2LAB)
 
         # Calcular a média e o desvio padrão dos canais L, a e b da imagem img1
-        mean1, std1 = cv2.meanStdDev(lab1)
-        mean1 = mean1.ravel()  # achatada em um array 1D, que pode ser mais facilmente manipulado ou processado
-        std1 = std1.ravel()  # achatada em um array 1D, que pode ser mais facilmente manipulado ou processado
+        media_pixels_img1, desvio_padrao_img1 = cv2.meanStdDev(img1)
+        media_pixels_img1 = media_pixels_img1.ravel()  # achatada em um array 1D, que pode ser mais facilmente manipulado ou processado
+        desvio_padrao_img1 = desvio_padrao_img1.ravel()  # achatada em um array 1D, que pode ser mais facilmente manipulado ou processado
 
         # Normalizar os canais da imagem img2 pela média e desvio padrão da imagem img1
-        lab2[:, :, 0] = np.clip(
-            (((lab2[:, :, 0] - np.mean(lab2[:, :, 0])) * (std1[0] / np.std(lab2[:, :, 0]))) + mean1[0]), 0, 255).astype(
+        img2[:, :, 0] = np.clip(
+            (((img2[:, :, 0] - np.mean(img2[:, :, 0])) * (desvio_padrao_img1[0] / np.std(img2[:, :, 0]))) + media_pixels_img1[0]), 0, 255).astype(
             np.uint8)
-        lab2[:, :, 1] = ((lab2[:, :, 1] - np.mean(lab2[:, :, 1])) * (std1[1] / np.std(lab2[:, :, 1]))) + mean1[1]
-        lab2[:, :, 2] = ((lab2[:, :, 2] - np.mean(lab2[:, :, 2])) * (std1[2] / np.std(lab2[:, :, 2]))) + mean1[2]
+        img2[:, :, 1] = ((img2[:, :, 1] - np.mean(img2[:, :, 1])) * (desvio_padrao_img1[1] / np.std(img2[:, :, 1]))) + media_pixels_img1[1]
+        img2[:, :, 2] = ((img2[:, :, 2] - np.mean(img2[:, :, 2])) * (desvio_padrao_img1[2] / np.std(img2[:, :, 2]))) + media_pixels_img1[2]
 
         # Converter de volta para o espaço de cor BGR
-        result = cv2.cvtColor(lab2, cv2.COLOR_LAB2BGR)
+        result = cv2.cvtColor(img2, cv2.COLOR_LAB2BGR)
 
         cv2.imwrite('../../template-matching/app-correspondencia-imagem/public/images/equalize_color_img1.jpg', result)
 
