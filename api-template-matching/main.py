@@ -3,6 +3,7 @@ import cv2
 import numpy as np
 from matplotlib import pyplot as plt
 
+from datetime import datetime
 
 def rotacionar_imagem(img, angulo):
     # A forma de uma imagem é acessada por img.shape.
@@ -23,6 +24,8 @@ def rotacionar_imagem(img, angulo):
 
 
 def surf_surf(query_img, train_img):
+    inicio = datetime.now()
+
     img1 = cv2.cvtColor(query_img, cv2.COLOR_BGR2GRAY)
     img2 = cv2.cvtColor(train_img, cv2.COLOR_BGR2GRAY)
 
@@ -51,9 +54,17 @@ def surf_surf(query_img, train_img):
         if m.distance < 0.7 * n.distance:
             good_matches.append(m)
 
-    return ransac(img1, img2, kp1, kp2, good_matches)
+    fim = datetime.now()
+
+    tempo_gasto = fim - inicio
+
+    inliers, outliers, img_difference, img_show = ransac(img1, img2, kp1, kp2, good_matches)
+
+    return inliers, outliers, img_difference, img_show, tempo_gasto
 
 def orb_orb(query_img, train_img):
+    inicio = datetime.now()
+
     # MIN_MATCH_COUNT = 125
 
     # train_img = rotacionar_imagem(train_img, 95)
@@ -102,11 +113,19 @@ def orb_orb(query_img, train_img):
     # cv2.imshow("Matches in ORB", final_img)
     # cv2.waitKey(0)
 
-    return ransac(img1, img2, kp1, kp2, matches)
+    fim = datetime.now()
+
+    tempo_gasto = fim - inicio
+
+    inliers, outliers, img_difference, img_show = ransac(img1, img2, kp1, kp2, good_matches)
+
+    return inliers, outliers, img_difference, img_show, tempo_gasto
 
     # https://medium.com/image-stitching-com-opencv-e-python/fazendo-uma-image-stitching-da-paisagem-da-janela-do-seu-quarto-fcf09df55c51
 
 def sift_sift(query_img, train_img):
+    inicio = datetime.now()
+
     # train_img = rotacionar_imagem(train_img,15)
 
     # Converte para Cinza para trabalhar com um canal apenas
@@ -144,7 +163,13 @@ def sift_sift(query_img, train_img):
         if m.distance < 0.7 * n.distance:
             good_matches.append(m)
 
-    return ransac(img1, img2, kp1, kp2, good_matches)
+    fim = datetime.now()
+
+    tempo_gasto = fim - inicio
+
+    inliers, outliers, img_difference, img_show = ransac(img1, img2, kp1, kp2, good_matches)
+
+    return inliers, outliers, img_difference, img_show, tempo_gasto
 
     # https://docs.opencv.org/3.4/d1/de0/tutorial_py_feature_homography.html
 
@@ -307,13 +332,14 @@ def main():
     # sift(query_img, train_img)
     # sif_match_ransac(query_img, train_img)
 
-    # inliers, outliers, img_difference, img_show = sift_sift(query_img, train_img)
-    # inliers, outliers, img_difference, img_show = orb_orb(query_img, train_img)
-    inliers, outliers, img_difference, img_show = surf_surf(query_img, train_img)
+    inliers, outliers, img_difference, img_show, tempo = sift_sift(query_img, train_img)
+    # inliers, outliers, img_difference, img_show, tempo = orb_orb(query_img, train_img)
+    # inliers, outliers, img_difference, img_show, tempo = surf_surf(query_img, train_img)
     if inliers > 5 and img_difference < 80:
         print("Número de inliers: ", inliers)
         print("Número de outliers: ", outliers)
         print("Subtração (img2-img1): ", img_difference)
+        print("Tempo: ", tempo)
     else:
         print("Imagens diferentes")
 
